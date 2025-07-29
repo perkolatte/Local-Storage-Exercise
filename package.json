@@ -1,0 +1,23 @@
+{
+  "name": "local-storage-exercise",
+  "version": "1.0.0",
+  "main": "run-tests.js",
+  "scripts": {
+    "test": "node run-tests.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/perkolatte/Local-Storage-Exercise.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/perkolatte/Local-Storage-Exercise/issues"
+  },
+  "homepage": "https://github.com/perkolatte/Local-Storage-Exercise#readme",
+  "description": "",
+  "dependencies": {
+    "puppeteer": "^24.15.0"
+  }
+}

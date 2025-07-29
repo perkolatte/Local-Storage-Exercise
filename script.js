@@ -4,12 +4,18 @@ document.addEventListener("DOMContentLoaded", function () {
   const colorForm = document.getElementById("color-form");
   const colorInput = document.getElementById("color-input");
 
+  const STORAGE_KEYS = {
+    CONTENT: "notes-content",
+    COLOR: "notes-color",
+    COUNTER: "notes-counter",
+  };
   // TODO: Load the note color from the local storage.
-  let noteColor = null; // Stores the selected note color from the form.
+  let noteColor = localStorage.getItem(STORAGE_KEYS.COLOR); // Stores the selected note color from the form.
   // TODO: Load the note ID counter from the local storage.
-  let noteIdCounter = 0; // Counter for assigning unique IDs to new notes.
-
+  let noteIdCounter =
+    parseInt(localStorage.getItem(STORAGE_KEYS.COUNTER), 10) || 0; // Counter for assigning unique IDs to new notes.
   // TODO: Load the notes from the local storage.
+  let noteContent = localStorage.getItem(STORAGE_KEYS.CONTENT);
 
   function addNewNote() {
     const id = noteIdCounter;
@@ -25,6 +31,8 @@ document.addEventListener("DOMContentLoaded", function () {
     noteIdCounter++; // Increments the counter since the ID is used for this note.
 
     // TODO: Add new note to the saved notes in the local storage.
+    localStorage.setItem(STORAGE_KEYS.CONTENT, JSON.stringify(noteContent));
+    localStorage.setItem(STORAGE_KEYS.COUNTER, noteIdCounter.toString());
   }
 
   colorForm.addEventListener("submit", function (event) {
