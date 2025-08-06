@@ -28,6 +28,25 @@ document.addEventListener("DOMContentLoaded", function () {
       throw new Error(`Assertion Failed: ${message}`);
     }
   }
+
+  /**
+   * Creates a debounced function that delays invoking `func` until after `wait`
+   * milliseconds have elapsed since the last time the debounced function was invoked.
+   * @param {Function} func The function to debounce.
+   * @param {number} wait The number of milliseconds to delay.
+   * @returns {Function} Returns the new debounced function.
+   */
+  function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  }
   /**
    * Saves the notes array to localStorage.
    */
@@ -161,6 +180,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
+  const debouncedSave = debounce(updateAndSaveNote, 300);
+
   noteContainer.addEventListener("dblclick", function (event) {
     if (event.target.classList.contains("note")) {
       event.target.remove(); // Removes the clicked note.
@@ -172,12 +193,6 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   noteContainer.addEventListener("focusout", function (event) {
-    if (event.target.classList.contains("note")) {
-      updateAndSaveNote(event.target);
-    }
-  });
-
-  noteContainer.addEventListener("mouseout", function (event) {
     if (event.target.classList.contains("note")) {
       updateAndSaveNote(event.target);
     }
@@ -198,6 +213,12 @@ document.addEventListener("DOMContentLoaded", function () {
       event.preventDefault(); // Prevent adding a new line.
       updateAndSaveNote(event.target);
       event.target.blur(); // Unfocus the element for a better user experience.
+    }
+  });
+
+  noteContainer.addEventListener("input", function (event) {
+    if (event.target.classList.contains("note")) {
+      debouncedSave(event.target);
     }
   });
 
