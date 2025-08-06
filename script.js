@@ -74,15 +74,12 @@ document.addEventListener("DOMContentLoaded", function () {
     const newColor = colorInput.value.trim(); // Removes whitespaces.
     if (!newColor) return;
 
-    const notes = document.querySelectorAll(".note");
-    for (const note of notes) {
-      note.style.backgroundColor = newColor;
-    }
-
-    colorInput.value = ""; // Clears the color input field after form submission.
-
     noteColor = newColor; // Updates the stored note color with the new selection.
     saveColor();
+
+    renderInitialNotes(); // Re-render notes to apply the new color
+
+    colorInput.value = ""; // Clears the color input field after form submission.
   });
 
   newNoteButton.addEventListener("click", function () {
@@ -142,7 +139,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
   window.addEventListener("keydown", function (event) {
     /* Ignores key presses made for color and note content inputs. */
-    if (event.target.id === "color-input" || event.target.type === "textarea") {
+    if (
+      event.target.id === "color-input" ||
+      event.target.tagName === "TEXTAREA"
+    ) {
       return;
     }
 
