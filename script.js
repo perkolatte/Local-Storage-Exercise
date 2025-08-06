@@ -114,13 +114,12 @@ document.addEventListener("DOMContentLoaded", function () {
     const content = `Note ${id}`;
     const newNote = { id, content, width: 120, height: 120 };
 
-    createNoteElement(newNote);
-
     noteIdCounter++; // Increments the counter since the ID is used for this note.
     saveCounter();
 
     notesContent.push(newNote);
     saveNotes();
+    renderInitialNotes();
   }
 
   colorForm.addEventListener("submit", function (event) {
@@ -184,11 +183,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
   noteContainer.addEventListener("dblclick", function (event) {
     if (event.target.classList.contains("note")) {
-      event.target.remove(); // Removes the clicked note.
-
       const noteIdToRemove = parseInt(event.target.dataset.noteId, 10);
       notesContent = notesContent.filter((note) => note.id !== noteIdToRemove);
       saveNotes();
+      renderInitialNotes();
     }
   });
 
