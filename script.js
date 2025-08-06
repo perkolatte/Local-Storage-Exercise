@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // TODO: Load the notes from the local storage.
   const notesFromStorage =
     JSON.parse(localStorage.getItem("notes-content")) || [];
-  let notesContent = notesFromStorage.map((note) => ({
+  let notes = notesFromStorage.map((note) => ({
     ...note,
     width: note.width || 120,
     height: note.height || 120,
@@ -51,7 +51,7 @@ document.addEventListener("DOMContentLoaded", function () {
    * Saves the notes array to localStorage.
    */
   function saveNotes() {
-    localStorage.setItem("notes-content", JSON.stringify(notesContent));
+    localStorage.setItem("notes-content", JSON.stringify(notes));
   }
 
   /**
@@ -104,9 +104,9 @@ document.addEventListener("DOMContentLoaded", function () {
   /**
    * Renders all notes from the notesContent array to the DOM.
    */
-  function renderInitialNotes() {
+  function renderNotes() {
     noteContainer.innerHTML = ""; // Clear container to prevent duplicates in test env
-    notesContent.forEach(createNoteElement);
+    notes.forEach(createNoteElement);
   }
 
   function addNewNote() {
@@ -117,9 +117,9 @@ document.addEventListener("DOMContentLoaded", function () {
     noteIdCounter++; // Increments the counter since the ID is used for this note.
     saveCounter();
 
-    notesContent.push(newNote);
+    notes.push(newNote);
     saveNotes();
-    renderInitialNotes();
+    renderNotes();
   }
 
   colorForm.addEventListener("submit", function (event) {
@@ -131,7 +131,7 @@ document.addEventListener("DOMContentLoaded", function () {
     noteColor = newColor; // Updates the stored note color with the new selection.
     saveColor();
 
-    renderInitialNotes(); // Re-render notes to apply the new color
+    renderNotes(); // Re-render notes to apply the new color
 
     colorInput.value = ""; // Clears the color input field after form submission.
   });
@@ -146,9 +146,7 @@ document.addEventListener("DOMContentLoaded", function () {
    */
   function updateAndSaveNote(noteElement) {
     const noteIdToUpdate = parseInt(noteElement.dataset.noteId, 10);
-    const noteToUpdate = notesContent.find(
-      (note) => note.id === noteIdToUpdate
-    );
+    const noteToUpdate = notes.find((note) => note.id === noteIdToUpdate);
 
     // Design by Contract: Precondition check.
     // The provided noteElement MUST correspond to a note in our state.
@@ -184,9 +182,9 @@ document.addEventListener("DOMContentLoaded", function () {
   noteContainer.addEventListener("dblclick", function (event) {
     if (event.target.classList.contains("note")) {
       const noteIdToRemove = parseInt(event.target.dataset.noteId, 10);
-      notesContent = notesContent.filter((note) => note.id !== noteIdToRemove);
+      notes = notes.filter((note) => note.id !== noteIdToRemove);
       saveNotes();
-      renderInitialNotes();
+      renderNotes();
     }
   });
 
@@ -236,5 +234,5 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   // Initial render of notes from local storage.
-  renderInitialNotes();
+  renderNotes();
 });
