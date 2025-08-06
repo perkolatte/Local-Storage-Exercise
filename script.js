@@ -19,6 +19,16 @@ document.addEventListener("DOMContentLoaded", function () {
   }));
 
   /**
+   * Throws an error if a condition is not met. Used for internal consistency checks.
+   * @param {boolean} condition The condition to check.
+   * @param {string} message The error message if the condition is false.
+   */
+  function assert(condition, message) {
+    if (!condition) {
+      throw new Error(`Assertion Failed: ${message}`);
+    }
+  }
+  /**
    * Saves the notes array to localStorage.
    */
   function saveNotes() {
@@ -44,6 +54,24 @@ document.addEventListener("DOMContentLoaded", function () {
    * @param {object} noteData - The note object { id, content }.
    */
   function createNoteElement(noteData) {
+    assert(
+      noteData && typeof noteData === "object",
+      "noteData must be an object."
+    );
+    assert(typeof noteData.id === "number", "noteData.id must be a number.");
+    assert(
+      typeof noteData.content === "string",
+      "noteData.content must be a string."
+    );
+    assert(
+      typeof noteData.width === "number",
+      "noteData.width must be a number."
+    );
+    assert(
+      typeof noteData.height === "number",
+      "noteData.height must be a number."
+    );
+
     const noteElement = document.createElement("textarea");
     noteElement.setAttribute("data-note-id", noteData.id.toString());
     noteElement.value = noteData.content;
