@@ -10,7 +10,13 @@ document.addEventListener("DOMContentLoaded", function () {
   let noteIdCounter =
     parseInt(localStorage.getItem("notes-id-counter"), 10) || 0; // Counter for assigning unique IDs to new notes.
   // TODO: Load the notes from the local storage.
-  let notesContent = JSON.parse(localStorage.getItem("notes-content")) || [];
+  const notesFromStorage =
+    JSON.parse(localStorage.getItem("notes-content")) || [];
+  let notesContent = notesFromStorage.map((note) => ({
+    ...note,
+    width: note.width || 120,
+    height: note.height || 120,
+  }));
 
   /**
    * Saves the notes array to localStorage.
@@ -43,6 +49,8 @@ document.addEventListener("DOMContentLoaded", function () {
     noteElement.value = noteData.content;
     noteElement.className = "note";
     noteElement.style.backgroundColor = noteColor;
+    noteElement.style.width = `${noteData.width}px`;
+    noteElement.style.height = `${noteData.height}px`;
     noteContainer.appendChild(noteElement);
   }
 
@@ -57,7 +65,7 @@ document.addEventListener("DOMContentLoaded", function () {
   function addNewNote() {
     const id = noteIdCounter;
     const content = `Note ${id}`;
-    const newNote = { id, content };
+    const newNote = { id, content, width: 120, height: 120 };
 
     createNoteElement(newNote);
 
@@ -86,7 +94,46 @@ document.addEventListener("DOMContentLoaded", function () {
     addNewNote();
   });
 
-  document.addEventListener("dblclick", function (event) {
+  /**
+   * Finds a note in the state array, updates its content if changed, and saves.
+   * @param {HTMLTextAreaElement} noteElement The textarea element to save.
+   */
+  function updateAndSaveNote(noteElement) {
+    const noteIdToUpdate = parseInt(noteElement.dataset.noteId, 10);
+    const noteToUpdate = notesContent.find(
+      (note) => note.id === noteIdToUpdate
+    );
+
+    // Design by Contract: Precondition check.
+    // The provided noteElement MUST correspond to a note in our state.
+    if (!noteToUpdate) {
+      console.error(
+        "State inconsistency: Attempted to update a note that does not exist in the state.",
+        { noteId: noteIdToUpdate }
+      );
+      throw new Error(
+        "Cannot update a note that is not tracked in the application state."
+      );
+    }
+
+    const updatedContent = noteElement.value;
+    const updatedWidth = noteElement.offsetWidth;
+    const updatedHeight = noteElement.offsetHeight;
+
+    const hasChanged =
+      noteToUpdate.content !== updatedContent ||
+      noteToUpdate.width !== updatedWidth ||
+      noteToUpdate.height !== updatedHeight;
+
+    if (hasChanged) {
+      noteToUpdate.content = updatedContent;
+      noteToUpdate.width = updatedWidth;
+      noteToUpdate.height = updatedHeight;
+      saveNotes();
+    }
+  }
+
+  noteContainer.addEventListener("dblclick", function (event) {
     if (event.target.classList.contains("note")) {
       event.target.remove(); // Removes the clicked note.
 
@@ -96,23 +143,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  /**
-   * Finds a note in the state array, updates its content if changed, and saves.
-   * @param {HTMLTextAreaElement} noteElement The textarea element to save.
-   */
-  function updateAndSaveNote(noteElement) {
-    const noteIdToUpdate = parseInt(noteElement.dataset.noteId, 10);
-    const updatedNoteContent = noteElement.value;
-    const noteToUpdate = notesContent.find(
-      (note) => note.id === noteIdToUpdate
-    );
-
-    if (noteToUpdate && noteToUpdate.content !== updatedNoteContent) {
-      noteToUpdate.content = updatedNoteContent;
-      saveNotes();
-    }
-  }
-
   noteContainer.addEventListener("focusout", function (event) {
     if (event.target.classList.contains("note")) {
       updateAndSaveNote(event.target);
@@ -120,6 +150,12 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   noteContainer.addEventListener("mouseout", function (event) {
+    if (event.target.classList.contains("note")) {
+      updateAndSaveNote(event.target);
+    }
+  });
+
+  noteContainer.addEventListener("mouseup", function (event) {
     if (event.target.classList.contains("note")) {
       updateAndSaveNote(event.target);
     }
