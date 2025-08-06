@@ -13,12 +13,6 @@ document.addEventListener("DOMContentLoaded", async function () {
     isComplete: false,
   };
 
-  const STORAGE_KEYS = {
-    NOTES: "notes-app-notes",
-    COLOR: "notes-app-color",
-    COUNTER: "notes-app-counter",
-  };
-
   /**
    * A simple assertion function.
    * @param {boolean} condition - The condition to check.
@@ -66,124 +60,145 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
   }
 
-  /**
-   * Helper to get notes from localStorage.
-   * @returns {Array}
-   */
-  function getStoredNotes() {
-    return JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTES)) || [];
-  }
-
   // --- Test Suite ---
 
-  await test("Adds a new note and persists state", () => {
+  await test("should create a new note on button click", () => {
     const newNoteButton = document.getElementById("new-note-button");
     newNoteButton.click();
 
-    const notesInStorage = getStoredNotes();
-    assert(
-      notesInStorage.length === 1,
-      `Expected 1 note in storage, but found ${notesInStorage.length}`
-    );
-    assert(
-      notesInStorage[0].content === "Note 0",
-      `Expected note content to be "Note 0", but got "${notesInStorage[0].content}"`
-    );
-
-    const counter = localStorage.getItem(STORAGE_KEYS.COUNTER);
-    assert(counter === "1", `Expected counter to be "1", but got "${counter}"`);
-
     const noteElement = document.querySelector(".note");
-    assert(noteElement !== null, "Note element was not added to the DOM");
+    assert(noteElement !== null, "Note element was not added to the DOM.");
+    assert(
+      noteElement.value === "Note 0",
+      `Expected default content "Note 0", but got "${noteElement.value}".`
+    );
   });
 
-  await test("Updates a note's content on focusout (blur)", () => {
+  await test("should persist a new note after page reload", () => {
     const newNoteButton = document.getElementById("new-note-button");
     newNoteButton.click();
 
-    const noteElement = document.querySelector(".note");
+    // Simulate page reload
+    document.dispatchEvent(new Event("DOMContentLoaded"));
+
+    const noteElements = document.querySelectorAll(".note");
+    assert(
+      noteElements.length === 1,
+      `Expected 1 note after reload, but found ${noteElements.length}.`
+    );
+    assert(
+      noteElements[0].value === "Note 0",
+      `Expected note content to be "Note 0" after reload.`
+    );
+  });
+
+  await test("should update a note's content and persist it", () => {
+    const newNoteButton = document.getElementById("new-note-button");
+    newNoteButton.click();
+
+    let noteElement = document.querySelector(".note");
     noteElement.value = "Updated content";
     noteElement.dispatchEvent(new Event("focusout", { bubbles: true }));
 
-    const notesInStorage = getStoredNotes();
-    assert(notesInStorage.length === 1, "Expected 1 note in storage");
+    // Simulate page reload
+    document.dispatchEvent(new Event("DOMContentLoaded"));
+
+    noteElement = document.querySelector(".note");
     assert(
-      notesInStorage[0].content === "Updated content",
-      `Expected updated content, but got "${notesInStorage[0].content}"`
+      noteElement.value === "Updated content",
+      `Expected updated content to persist, but got "${noteElement.value}".`
     );
   });
 
-  await test("Deletes a note on double-click", () => {
+  await test("should delete a note on double-click and persist the deletion", () => {
     const newNoteButton = document.getElementById("new-note-button");
     newNoteButton.click();
     newNoteButton.click();
 
-    assert(
-      getStoredNotes().length === 2,
-      "Setup failed: Expected 2 notes in storage"
-    );
-
-    const firstNote = document.querySelector(".note");
+    const firstNote = document.querySelector('.note[data-note-id="0"]');
     firstNote.dispatchEvent(new Event("dblclick", { bubbles: true }));
 
-    const notesInStorage = getStoredNotes();
-    assert(
-      notesInStorage.length === 1,
-      `Expected 1 note in storage after delete, but found ${notesInStorage.length}`
-    );
-    assert(
-      notesInStorage[0].id === 1,
-      `Expected note with ID 1 to remain, but found ID ${notesInStorage[0].id}`
-    );
     assert(
       document.querySelectorAll(".note").length === 1,
-      "Note element was not removed from the DOM"
+      "Expected 1 note to remain in DOM after deletion."
+    );
+
+    // Simulate page reload
+    document.dispatchEvent(new Event("DOMContentLoaded"));
+
+    const noteElements = document.querySelectorAll(".note");
+    assert(
+      noteElements.length === 1,
+      `Expected 1 note after reload, but found ${noteElements.length}.`
+    );
+    assert(
+      noteElements[0].value === "Note 1",
+      "Expected the correct note to remain after deletion and reload."
     );
   });
 
-  await test("Sets and persists note color", () => {
+  await test("should update the color for new notes and persist it", () => {
     const colorForm = document.getElementById("color-form");
     const colorInput = document.getElementById("color-input");
+    const newNoteButton = document.getElementById("new-note-button");
 
     colorInput.value = "blue";
     colorForm.dispatchEvent(new Event("submit"));
 
-    const storedColor = localStorage.getItem(STORAGE_KEYS.COLOR);
+    newNoteButton.click();
+    let noteElement = document.querySelector('.note[data-note-id="0"]');
     assert(
-      storedColor === "blue",
-      `Expected "blue" in storage, but got "${storedColor}"`
+      noteElement.style.backgroundColor === "blue",
+      `Expected new note to be blue, but got ${noteElement.style.backgroundColor}.`
+    );
+
+    // Simulate page reload
+    document.dispatchEvent(new Event("DOMContentLoaded"));
+
+    newNoteButton.click(); // Create a second note after reload
+    noteElement = document.querySelector('.note[data-note-id="1"]');
+    assert(
+      noteElement.style.backgroundColor === "blue",
+      `Expected color to persist for new notes after reload, but got ${noteElement.style.backgroundColor}.`
     );
   });
 
-  await test("Loads all data from localStorage on startup", () => {
-    // 1. Setup localStorage
-    const mockNotes = [{ id: 0, content: "Test Note" }];
-    localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(mockNotes));
-    localStorage.setItem(STORAGE_KEYS.COLOR, "red");
-    localStorage.setItem(STORAGE_KEYS.COUNTER, "1");
+  await test("Creates a new note with 'n' key shortcut", () => {
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "n" }));
 
-    // 2. Trigger script initialization
-    document.dispatchEvent(new Event("DOMContentLoaded"));
+    const noteElements = document.querySelectorAll(".note");
+    assert(
+      noteElements.length === 1,
+      "Note element was not added to the DOM via shortcut."
+    );
+  });
 
-    // 3. Assert
+  await test("Ignores 'n' key shortcut when an input is focused", () => {
+    const colorInput = document.getElementById("color-input");
+    colorInput.focus();
+    // The event must bubble and be dispatched on the document for the target to be correctly identified
+    document.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "n", bubbles: true })
+    );
+
+    let noteElements = document.querySelectorAll(".note");
+    assert(
+      noteElements.length === 0,
+      `Expected 0 notes when color input is focused, but found ${noteElements.length}.`
+    );
+
+    // Test with textarea
+    document.getElementById("new-note-button").click(); // Create one note
     const noteElement = document.querySelector(".note");
-    assert(noteElement !== null, "Note was not rendered from storage");
-    assert(
-      noteElement.value === "Test Note",
-      `Note content should be "Test Note", but was "${noteElement.value}"`
-    );
-    assert(
-      noteElement.style.backgroundColor === "red",
-      `Note color should be "red", but was "${noteElement.style.backgroundColor}"`
+    noteElement.focus();
+    document.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "n", bubbles: true })
     );
 
-    // Check if counter is correctly loaded for the *next* note
-    const newNoteButton = document.getElementById("new-note-button");
-    newNoteButton.click();
-    const newNoteElement = document.querySelector('.note[data-note-id="1"]');
+    noteElements = document.querySelectorAll(".note");
     assert(
-      newNoteElement !== null,
-      "New note was not created with the correct ID from the loaded counter"
+      noteElements.length === 1,
+      `Expected 1 note when textarea is focused, but found ${noteElements.length}.`
     );
   });
 
