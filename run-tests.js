@@ -13,9 +13,11 @@ async function runTests() {
     if (text.includes("testReport")) return;
     console.log(`  \x1b[90mBROWSER LOG: ${text}\x1b[0m`); // Dim color
   });
-
-  const filePath = `file://${path.join(__dirname, "test.html")}`;
-  await page.goto(filePath, { waitUntil: "networkidle0" });
+  // Load the actual application file, not the test harness.
+  const indexPath = `file://${path.join(__dirname, "index.html")}`;
+  await page.goto(indexPath, { waitUntil: "networkidle0" });
+  // Inject the test script into the loaded page.
+  await page.addScriptTag({ path: path.join(__dirname, "test.js") });
 
   // Wait for the test script to signal that all tests are complete
   await page.waitForFunction(

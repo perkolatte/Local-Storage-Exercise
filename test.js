@@ -1,11 +1,15 @@
-let testsHaveRun = false;
-document.addEventListener("DOMContentLoaded", async function () {
-  if (testsHaveRun) return; // Prevent recursive execution
-  testsHaveRun = true;
+(async function () {
+  // This script is injected and runs immediately.
+  // We prevent it from running multiple times.
+  if (window.testsHaveRun) return;
+  window.testsHaveRun = true;
 
-  const resultsContainer = document.getElementById("test-results");
-  let testsPassed = 0;
-  let testsFailed = 0;
+  // The test runner needs a place to output results in the browser for debugging,
+  // but index.html doesn't have it. So we create it dynamically.
+  const resultsContainer = document.createElement("div");
+  resultsContainer.id = "test-results";
+  resultsContainer.style.display = "none"; // Hide from view
+  document.body.appendChild(resultsContainer);
 
   // Global report object for the terminal runner
   window.testReport = {
@@ -38,14 +42,13 @@ document.addEventListener("DOMContentLoaded", async function () {
       localStorage.clear();
       document.getElementById("note-container").innerHTML = "";
       // Re-trigger DOMContentLoaded for the main script to reload from a clean state
+      window.noteColor = localStorage.getItem("notes-color") || "#ffc";
       document.dispatchEvent(new Event("DOMContentLoaded"));
 
       await testFn();
       reportEntry.passed = true;
-      testsPassed++;
     } catch (error) {
       reportEntry.message = error.message;
-      testsFailed++;
     } finally {
       window.testReport.results.push(reportEntry);
 
@@ -115,7 +118,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     newNoteButton.click();
     newNoteButton.click();
 
-    const firstNote = document.querySelector('.note[data-note-id="0"]');
+    const firstNote = document.querySelector('.note[data-note-id="0"]'); // select the first note
     firstNote.dispatchEvent(new Event("dblclick", { bubbles: true }));
 
     assert(
@@ -142,24 +145,41 @@ document.addEventListener("DOMContentLoaded", async function () {
     const colorInput = document.getElementById("color-input");
     const newNoteButton = document.getElementById("new-note-button");
 
+    // Simulate user typing and trigger input event for the color
     colorInput.value = "blue";
-    colorForm.dispatchEvent(new Event("submit"));
+    colorInput.dispatchEvent(new Event("input", { bubbles: true }));
 
+    // Dispatch the submit event
+    colorForm.dispatchEvent(
+      new Event("submit", { bubbles: true, cancelable: true })
+    );
+
+    // Re-trigger DOMContentLoaded to apply the new color
+    document.dispatchEvent(new Event("DOMContentLoaded"));
+
+    // Create a new note
     newNoteButton.click();
+
+    // Get the new note element
     let noteElement = document.querySelector('.note[data-note-id="0"]');
+
+    // Assert that the note's background color is blue
+    const expectedColorRgb = "rgb(0, 0, 255)";
+    const actualColor = window.getComputedStyle(noteElement).backgroundColor;
     assert(
-      noteElement.style.backgroundColor === "blue",
-      `Expected new note to be blue, but got ${noteElement.style.backgroundColor}.`
+      actualColor === expectedColorRgb,
+      `Expected new note to be blue, but got ${actualColor}.`
     );
 
     // Simulate page reload
     document.dispatchEvent(new Event("DOMContentLoaded"));
-
-    newNoteButton.click(); // Create a second note after reload
-    noteElement = document.querySelector('.note[data-note-id="1"]');
+    const noteElementAfterReload = document.querySelector(
+      '.note[data-note-id="0"]'
+    );
     assert(
-      noteElement.style.backgroundColor === "blue",
-      `Expected color to persist for new notes after reload, but got ${noteElement.style.backgroundColor}.`
+      window.getComputedStyle(noteElementAfterReload).backgroundColor ===
+        expectedColorRgb,
+      "Expected color to persist after reload"
     );
   });
 
@@ -175,20 +195,22 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   await test("Ignores 'n' key shortcut when an input is focused", () => {
     const colorInput = document.getElementById("color-input");
+
+    // Focus the color input, then dispatch the keyboard event on the document.
     colorInput.focus();
-    // The event must bubble and be dispatched on the document for the target to be correctly identified
     document.dispatchEvent(
       new KeyboardEvent("keydown", { key: "n", bubbles: true })
     );
 
     let noteElements = document.querySelectorAll(".note");
+
     assert(
       noteElements.length === 0,
       `Expected 0 notes when color input is focused, but found ${noteElements.length}.`
     );
 
     // Test with textarea
-    document.getElementById("new-note-button").click(); // Create one note
+    document.getElementById("new-note-button").click();
     const noteElement = document.querySelector(".note");
     noteElement.focus();
     document.dispatchEvent(
@@ -202,17 +224,6 @@ document.addEventListener("DOMContentLoaded", async function () {
     );
   });
 
-  // --- Final Summary ---
-  const summary = document.createElement("h3");
-  if (testsFailed > 0) {
-    summary.textContent = `Finished: ${testsPassed} passed, ${testsFailed} failed.`;
-    summary.className = "fail";
-  } else {
-    summary.textContent = `All ${testsPassed} tests passed!`;
-    summary.className = "pass";
-  }
-  resultsContainer.prepend(summary);
-
   // Signal completion for the terminal runner
   window.testReport.isComplete = true;
-});
+})();

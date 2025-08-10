@@ -4,8 +4,8 @@ document.addEventListener("DOMContentLoaded", function () {
   const colorForm = document.getElementById("color-form");
   const colorInput = document.getElementById("color-input");
 
-  // TODO: Load the note color from the local storage.
   let noteColor = localStorage.getItem("notes-color") || "#ffc"; // Provide a default color
+
   // TODO: Load the note ID counter from the local storage.
   let noteIdCounter =
     parseInt(localStorage.getItem("notes-id-counter"), 10) || 0; // Counter for assigning unique IDs to new notes.
@@ -220,9 +220,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
   window.addEventListener("keydown", function (event) {
     /* Ignores key presses made for color and note content inputs. */
+    const activeElement = document.activeElement;
     if (
-      event.target.id === "color-input" ||
-      event.target.tagName === "TEXTAREA"
+      activeElement.id === "color-input" ||
+      activeElement.tagName === "TEXTAREA"
     ) {
       return;
     }
